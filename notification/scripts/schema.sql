@@ -1,3 +1,0 @@
-DROP SCHEMA IF EXISTS xws_notification CASCADE;
-
-CREATE SCHEMA IF NOT EXISTS xws_notification;
