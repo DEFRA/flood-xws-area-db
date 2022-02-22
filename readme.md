@@ -1,37 +1,117 @@
-# XWS DB
+# flood-xws-area-db
 
-This project currently contains the database scripts for all the XWS subsystems.
+Database and migrations scripts for the XWS Area schema
 
-These subsystems are mapped to individual postgres schema: `xws_alert`, `xws_area`, `xws_notification`, `xws_contact`. Eventually, this repo may get split into a number of separate db repos per each subsystem. Also, they may eventually be installed to separate databases.
+## Environment variables
+
+| name                    | description                    | required   | valid                         |
+| ----------              | ------------------             | :--------: | :---------------------------: |
+| DATABASE_URL            | Database connection string     | yes        |                               |
 
 
 ## Getting started
 
-***Creating Target Area insert SQL from shape files***
+Pre-requisites:
+1. [Postgres](https://www.postgresql.org/) v12 with plugins PostGIS and uuid-ossp
+2. [ogr2ogr](https://gdal.org/programs/ogr2ogr.html) GDAL 3.0.4
 
-After cloning the repo or when the zip files in `area/flood-areas` containing the Flood Alert or Warning Areas are updated then the SQL files which insert the target areas need to be regenerated. The script `scripts/generate-area-data.sh` will need to be re-run from the repo root directory. The generated SQL files are too large to commit to Github and so are ignored by git.
+
+### Mac Users
+
+The easiest way to use PG on a Mac is with [postgresapp](https://postgresapp.com/downloads.html).
+
+Choose PostgreSQL 12.8 / PostGIS 3.0.3.
+
+Postgresapp also comes bundled with ogr2ogr meaning you don't have to install that separately.
+
+You'll need [make them available on your $PATH](https://postgresapp.com/documentation/cli-tools.html). You can do this by adding to your `.profile` or by following the instructions in the link.
+
+### Initialising the xws area database
+
+Once `PG`, `psql`, `PostGIS` and `ogr2ogr` are available we can [create our initial database](https://www.postgresql.org/docs/9.0/sql-createdatabase.html).
+
+Do this using your db client or via `psql`:
+
+`CREATE DATABASE xws_area;`
+
+Now we are ready to prepare the database.
+
+First ensure the `DATABASE_URL` environment variable is set.
+
+Then, from the root of this project, execute the following commands.
+
+1. Run the db migrations
+
+`npx knex migrate:up`
+
+2. Seed the db
+
+`npx knex seed:run`
+
+3. Import the Alert and Warning Target Areas.
+
+`cd bin`
+
+`./populatedb`
+
+
+### One line
+`npx knex migrate:down && npx knex migrate:up && npx knex seed:run && cd bin && ./populatedb && cd ..`
+
+### Other useful commands
+
+[Knex](https://knexjs.org/) is used for db migrations.
+
+Create a new migration file
+`npx knex migrate:make <name>`
+
+Create a new seed file
+`npx knex seed:make seed_name`
+
+To run the next migration that has not yet been run
+`npx knex migrate:up`
+
+To run the specified migration that has not yet been run
+`npx knex migrate:up <name>`
+
+Run all seed files
+`npx knex seed:run`
+
+To undo the last migration that was run
+`npx knex migrate:down`
+
+To undo the specified migration that was run
+`npx knex migrate:down <name>`
+
+### GOV.UK PaaS
+
+https://docs.cloud.service.gov.uk/deploying_services/postgresql/#set-up-a-postgresql-service
+
+E.g.
+
+`$ cf marketplace -e postgres`
+`$ cf create-service postgres tiny-unencrypted-12 xws-area-db -c '{"enable_extensions": ["postgis"]}'`
+
+#### Initialise the DB
+
+From https://docs.cloud.service.gov.uk/deploying_services/postgresql/#non-paas-to-paas
+
+`$ pg_dump --host localhost --file xws_area.sql xws_area`
+
+`$ cf conduit xws-area-db -- psql < xws_area.sql`
+
+`$ \dt *.*`
+
+### Resources
+
+[Knex](https://knexjs.org/)
+
+[Knex migrations cli](https://knexjs.org/#Migrations)
+
+[Knex cheatsheet](https://devhints.io/knex)
+
 
 The shape zip files come from:
 
 * https://data.gov.uk/dataset/0d901c4a-6e1a-4f9a-9408-73e0c1f49dd3/flood-warning-areas
 * https://data.gov.uk/dataset/7749e0a6-08fb-4ad8-8232-4e41da74a248/flood-alert-areas
-
-***Docker***
-
-It is recommended to run postgres in a docker container. The instructions for running a populated DB and all three XWS applications are found in the [flood-xws-development](https://github.com/DEFRA/flood-xws-development) repository. The database will be populated with the alert and warning target area as well as all the schema definitions and data for each subsystem.
-
-***Local Install***
-
-Pre-requisites: Postgres v12, Plugins -  PostGIS, uuid-ossp
-
-```
-  psql -Atx postgresql://postgres:postgres@localhost -f run.sql
-```
-
-***PaaS service DB***
-
-To populate the PaaS service DB run the following command:
-
-`docker build --file DockerfileCF . -t cf-db && docker run --env-file ./cf.env cf-db`
-
-Note: cf env vars are populated using an env file which you will need to create (see cf.env.sample for the env vars which need populationg)

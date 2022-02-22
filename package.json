@@ -1,0 +1,32 @@
+{
+  "name": "flood-xws-area-db",
+  "version": "0.0.1",
+  "description": "Database and migrations scripts for the XWS Area schema",
+  "main": "index.js",
+  "scripts": {
+    "lint": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DEFRA/flood-xws-area-db.git"
+  },
+  "keywords": [
+    "xws",
+    "area",
+    "database",
+    "knex"
+  ],
+  "author": "DEFRA",
+  "license": "OGL-UK-3.0",
+  "bugs": {
+    "url": "https://github.com/DEFRA/flood-xws-area-db/issues"
+  },
+  "homepage": "https://github.com/DEFRA/flood-xws-area-db#readme",
+  "dependencies": {
+    "knex": "1.0.3",
+    "pg": "8.7.3"
+  },
+  "devDependencies": {
+    "standard": "16.0.4"
+  }
+}
