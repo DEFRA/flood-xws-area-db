@@ -1,0 +1,35 @@
+#!/bin/bash
+DB_NAME=xws_area
+
+# Unzip shapefile and load the alert areas into a new table called "faa" xws_area schema
+unzip -d faa "Flood Alert English Warning.zip"
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" "PG:$DATABASE_URL" "./faa/new_filename.shp" -lco GEOMETRY_NAME=geom \
+  -lco FID=gid -lco PRECISION=no -lco SCHEMA=xws_area -nlt PROMOTE_TO_MULTI -nln faa -overwrite -progress
+rm -rf faa
+
+# Unzip shapefile and load the warning areas into a new table called "fwa" in the xws_area schema
+unzip -d fwa "Flood Warning English Warning.zip"
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" "PG:$DATABASE_URL" "./fwa/new_filename.shp" -lco GEOMETRY_NAME=geom \
+  -lco FID=gid -lco PRECISION=no -lco SCHEMA=xws_area -nlt PROMOTE_TO_MULTI -nln fwa -overwrite -progress
+rm -rf fwa
+
+# # Now import the data from these new "faa" and "fwa" tables into the combined table xws_area.area (also drops the temporary "faa" and "fwa" tables)
+psql -Atx $DATABASE_URL -f populatedb.sql
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/areas-geo.json \
+#   -c "select json_agg(t) FROM (select \"code\", ST_AsGeoJson(centroid) as centroid, ST_AsGeoJson(bounding_box) as bounding_box from xws_area.area) t;"
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/ea-areas.json \
+#   -c 'select json_agg(t) FROM (select id, name, full_name, "group" from xws_area.ea_area) t;'
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/ea-owners.json \
+#   -c "select json_agg(t) FROM (select id, name, ea_area_id as ea_area from xws_area.ea_owner) t;"
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/area-types.json \
+#   -c "select json_agg(t) FROM (select id, name from xws_area.type) t;"
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/area-categories.json \
+#   -c "select json_agg(t) FROM (select id, name from xws_area.category) t;"
+
+# psql -d $DB_NAME --tuples-only --pset format=unaligned --output static/areas.json \
+#   -c "select json_agg(t) FROM (select code, name, description from xws_area.area) t;"

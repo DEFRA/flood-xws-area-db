@@ -1,8 +1,0 @@
-#!/bin/bash
-
-set -e
-
-cf api $CF_API
-cf auth
-cf target -o defra-next-warning-system -s sandbox
-cf conduit ${CF_SERVICE_DB} -- ./populate-db 
